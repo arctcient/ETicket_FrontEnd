@@ -1,24 +1,41 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
+import axios from 'axios';
 import './Auth.css';
 
 export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [errorMessage, setErrorMessage] = useState('');
   const navigate = useNavigate();
 
   const handleLogin = async (e) => {
     e.preventDefault();
 
-    if (email === 'admin@example.com') {
-      localStorage.setItem('role', 'admin');
-      navigate('/admin');
-    } else {
-      localStorage.setItem('role', 'user');
-      navigate('/');
-    }
+    try {
+      const response = await axios.post('http://localhost:8000/api/login', {
+        email,
+        password
+      });
 
-    window.location.reload();
+      const { access_token, user } = response.data;
+
+      // Simpan token dan role ke localStorage
+      localStorage.setItem('token', access_token);
+      localStorage.setItem('role', user.role);
+      localStorage.setItem('user_id', user.id); // Simpan ID jika perlu digunakan
+
+      // Redirect berdasarkan role
+      if (user.role === 'admin') {
+        navigate('/admin');
+      } else {
+        navigate('/');
+      }
+
+      window.location.reload(); // Supaya useEffect dan guard langsung jalan
+    } catch (error) {
+      setErrorMessage('Email atau password salah');
+    }
   };
 
   return (
@@ -51,6 +68,10 @@ export default function Login() {
               placeholder="Masukkan password"
             />
           </div>
+
+          {errorMessage && (
+            <div className="alert alert-danger py-2 text-center">{errorMessage}</div>
+          )}
 
           <button type="submit" className="btn btn-primary w-100">Login</button>
         </form>
