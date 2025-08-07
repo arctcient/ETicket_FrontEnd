@@ -1,20 +1,26 @@
 // src/pages/user/MyTicket.jsx
 
-import React from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import axios from 'axios';
 import UserNavbar from '../../layouts/UserNavbar';
 
 export default function MyTicket() {
-  const location = useLocation();
-  const navigate = useNavigate();
+  const [tiketList, setTiketList] = useState([]);
 
   const dummyUser = {
     nama: 'Ikhsan Khoirul',
     foto: 'https://via.placeholder.com/50',
   };
 
-  // Ambil data dari state yang dilempar saat redirect
-  const tiket = location.state?.tiket;
+  useEffect(() => {
+    axios.get('http://localhost:8000/api/transaksi')
+      .then(response => {
+        setTiketList(response.data);
+      })
+      .catch(error => {
+        console.error('Gagal mengambil tiket:', error);
+      });
+  }, []);
 
   return (
     <>
@@ -22,26 +28,21 @@ export default function MyTicket() {
       <div className="container my-5">
         <h3 className="mb-4">Tiket Saya</h3>
 
-        {!tiket ? (
-          <div className="text-muted">Kamu belum memesan tiket.</div>
+        {tiketList.length === 0 ? (
+          <p>Belum ada tiket.</p>
         ) : (
-          <div className="card shadow-sm">
-            <img
-              src={tiket.gambar}
-              className="card-img-top"
-              alt={tiket.nama}
-              style={{ maxHeight: '300px', objectFit: 'cover' }}
-            />
-            <div className="card-body">
-              <h4 className="card-title">{tiket.nama}</h4>
-              <p className="text-muted">{tiket.lokasi}</p>
-              <p>Harga: Rp{tiket.harga.toLocaleString()}</p>
-              <p>{tiket.deskripsi}</p>
-              <button className="btn btn-secondary" onClick={() => navigate('/dashboard')}>
-                Kembali ke Dashboard
-              </button>
+          tiketList.map((tiket) => (
+            <div key={tiket.id} className="card shadow-sm mb-3">
+              <div className="card-body">
+                <h4 className="card-title">{tiket.tempat_wisata?.nama}</h4>
+                <p className="text-muted">{tiket.tempat_wisata?.lokasi}</p>
+                <p>Tanggal Kunjungan: {tiket.tanggal_kunjungan}</p>
+                <p>Jumlah Tiket: {tiket.jumlah_tiket}</p>
+                <p>Total Harga: Rp {parseInt(tiket.total_harga).toLocaleString()}</p>
+                <p>{tiket.tempat_wisata?.deskripsi}</p>
+              </div>
             </div>
-          </div>
+          ))
         )}
       </div>
     </>
